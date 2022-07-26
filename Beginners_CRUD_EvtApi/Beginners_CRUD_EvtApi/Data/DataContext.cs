@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Beginners_CRUD_EvtApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Beginners_CRUD_EvtApi.Data
 {
@@ -6,7 +7,7 @@ namespace Beginners_CRUD_EvtApi.Data
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
-        public DbSet<SuperHero> SuperHeroes { get; set; }
+        public DbSet<SuperHeroModel> SuperHeroes { get; set; }
 
     }
 }

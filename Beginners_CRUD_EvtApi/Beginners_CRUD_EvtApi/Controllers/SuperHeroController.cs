@@ -1,83 +1,62 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Beginners_CRUD_EvtApi.Interfaces;
+using Beginners_CRUD_EvtApi.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Beginners_CRUD_EvtApi.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class SuperHeroController : ControllerBase
     {
-        private static List<SuperHero> heroes = new List<SuperHero>
-            {
-                new SuperHero 
-                {
-                    Id = 1, 
-                    Name = "Spider Man", 
-                    FirstName = "Peter", 
-                    LastName = "Parker", 
-                    Place = "New York City" 
-                },
-                new SuperHero
-                {
-                    Id = 2,
-                    Name = "Iron Man",
-                    FirstName = "Tony",
-                    LastName = "Stark",
-                    Place = "Long Island"
-                }
-            };
-        private readonly DataContext _context;
-        public SuperHeroController(DataContext context)
+       
+        private readonly ISuperHeroServices _superHeroServices;
+        public SuperHeroController(ISuperHeroServices superHeroServices)
         {
-            _context = context;
+            _superHeroServices = superHeroServices;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<SuperHero>>> Get()
+        public async Task<ActionResult<List<SuperHeroModel>>> Get()
         {
-            return Ok(await _context.SuperHeroes.ToListAsync()) ;
+            var token = HttpContext.GetTokenAsync("acess_token").Result;
+            var heroes = await _superHeroServices.GetAllHeroes();
+            return Ok(heroes.Value);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<SuperHero>> Get(int id)
+        public async Task<ActionResult<SuperHeroModel>> Get(string id)
         {
-            var hero = await _context.SuperHeroes.FindAsync(id);
+            var hero = _superHeroServices.GetHeroById(id);
             if (hero == null)
                 return BadRequest("Hero not found.");
-            return Ok(hero);
+            return Ok(hero.Result.Value);
         }
         [HttpPost]
-        public async Task<ActionResult<List<SuperHero>>> AddHero(SuperHero hero)
+        public async Task<ActionResult<List<SuperHeroModel>>> AddHero(SuperHeroModel hero)
         {
-            _context.SuperHeroes.Add(hero);
-            await _context.SaveChangesAsync();
-            return Ok(await _context.SuperHeroes.ToListAsync());
+            var request = await _superHeroServices.AddHero(hero);
+            return Ok(request.Value);
         }
         [HttpPut]
-        public async Task<ActionResult<List<SuperHero>>> UpdateHero(SuperHero request)
+        public async Task<ActionResult<List<SuperHeroModel>>> UpdateHero(SuperHeroModel request)
         {
-            var dbHero = await _context.SuperHeroes.FindAsync(request.Id);
+            var dbHero = await _superHeroServices.UpdateHero(request);
             if (dbHero == null)
                 return BadRequest("Hero not found.");
-
-            dbHero.Name = request.Name;
-            dbHero.FirstName = request.FirstName;
-            dbHero.LastName = request.LastName;
-            dbHero.Place = request.Place;
-
-            await _context.SaveChangesAsync();
-            return Ok(await _context.SuperHeroes.ToListAsync());
+           
+            return Ok(dbHero.Value);
         }
 
         [HttpDelete]
-        public async Task<ActionResult<List<SuperHero>>> DeleteHero(int id)
+        public async Task<ActionResult<List<SuperHeroModel>>> DeleteHero(string id)
         {
-            var hero = await _context.SuperHeroes.FindAsync(id);
-            if (hero == null)
+            var request = await _superHeroServices.DeleteHero(id);
+            if (request == null)
                 return BadRequest("Hero not found.");
-            _context.SuperHeroes.Remove(hero);
-            await _context.SaveChangesAsync();
-            return Ok(await _context.SuperHeroes.ToListAsync());
+            return Ok(request.Value);
         }
     }
 }
